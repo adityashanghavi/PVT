@@ -201,7 +201,7 @@
       TIMEOUT_MS: 10000,
       FIRST_DELAY_MS: null,
       VARIANT: "3min"
-    }
+    },
 
     "5min": {
       label: "PVT 5 minutes",
@@ -213,7 +213,7 @@
       TIMEOUT_MS: 10000,
       FIRST_DELAY_MS: 2000,
       VARIANT: "5min"
-    },
+    }
   };
 
   const DOC_POINTER_OPTS = { passive: false, capture: true };
@@ -266,7 +266,6 @@
     const chosen = variantSelect.value;
     CFG = PRESETS[chosen] || PRESETS["5min"];
 
-    participantId = id;
     sessionStartLocal = new Date().toLocaleString();
 
     running = true;
