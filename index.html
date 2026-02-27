@@ -138,9 +138,22 @@
     <div class="divider"></div>
 
     <div class="row">
-      <button id="downloadBtn">Download JSON</button>
       <button id="restartBtn">Restart (new participant or new run)</button>
     </div>
+    
+    <div class="divider"></div>
+    
+    <div class="muted" style="margin-bottom:8px;">Full JSON Output</div>
+    <pre id="jsonOutput" style="
+      background:#0f172a;
+      border:1px solid #334155;
+      border-radius:12px;
+      padding:12px;
+      max-height:300px;
+      overflow:auto;
+      font-size:12px;
+      color:#cbd5e1;
+    "></pre>
 
     <div class="divider"></div>
 
@@ -178,7 +191,6 @@
   const resultsPanel = document.getElementById('resultsPanel');
   const summaryPills = document.getElementById('summaryPills');
   const resultsTbody = document.querySelector('#resultsTable tbody');
-  const downloadBtn = document.getElementById('downloadBtn');
   const restartBtn = document.getElementById('restartBtn');
 
   // Two presets, selectable via dropdown
@@ -406,7 +418,10 @@
       `;
       resultsTbody.appendChild(tr);
     }
-  }
+
+    const jsonOutput = document.getElementById('jsonOutput');
+    jsonOutput.textContent = buildJSON();
+}
 
   function buildJSON(){
     const extra = computeExtraSummary();
@@ -476,14 +491,14 @@
 
   // Start bindings
   startBtn.addEventListener('click', start);
-  startBtn.addEventListener('pointerup', start);
+  startBtn.addEventListener('pointerup', start);renderResults()
+  
   startBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') start(); });
 
   // Response binding
   dot.addEventListener('pointerdown', recordResponse);
 
   // Results actions
-  downloadBtn.addEventListener('click', saveJSONLocally);
   restartBtn.addEventListener('click', resetAll);
 })();
 </script>
