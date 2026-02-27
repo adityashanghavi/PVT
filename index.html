@@ -114,12 +114,10 @@
     <div id="pidWrap">
       <label for="taskVariant">Task:</label>
       <select id="taskVariant">
+        <option value="1min">PVT 1 minute</option>
         <option value="3min">PVT 3 minutes</option>
         <option value="5min" selected>PVT 5 minutes</option>
       </select>
-
-      <label for="participantId">Participant ID:</label>
-      <input id="participantId" type="text" placeholder="e.g., P001" autocomplete="off" />
 
       <button id="startBtn">Start PVT</button>
     </div>
@@ -169,7 +167,7 @@
   const dot = document.getElementById('dot');
   const startBtn = document.getElementById('startBtn');
   const instructions = document.getElementById('instructions');
-  const pidInput = document.getElementById('participantId');
+
   const gate = document.getElementById('gate');
   const thanks = document.getElementById('thanks');
 
@@ -181,17 +179,18 @@
 
   // Two presets, selectable via dropdown
   const PRESETS = {
-    "5min": {
-      label: "PVT 5 minutes",
-      TASK_DURATION_MS: 5 * 60 * 1000,
-      MIN_DELAY_MS: 2000,
-      MAX_DELAY_MS: 10000,
-      LAPSE_THRESHOLD_MS: 500,
+    "1min": {
+      label: "PVT 1 minute",
+      TASK_DURATION_MS: 1 * 60 * 1000,   // 1 minute
+      MIN_DELAY_MS: 1000,                // 1 s
+      MAX_DELAY_MS: 4000,                // 4 s
+      LAPSE_THRESHOLD_MS: 355,           // same as 3-min
       FALSE_START_THRESHOLD_MS: 100,
       TIMEOUT_MS: 10000,
-      FIRST_DELAY_MS: 2000,
-      VARIANT: "5min"
+      FIRST_DELAY_MS: null,
+      VARIANT: "1min"
     },
+
     "3min": {
       label: "PVT 3 minutes",
       TASK_DURATION_MS: 3 * 60 * 1000,
@@ -203,6 +202,18 @@
       FIRST_DELAY_MS: null,
       VARIANT: "3min"
     }
+
+    "5min": {
+      label: "PVT 5 minutes",
+      TASK_DURATION_MS: 5 * 60 * 1000,
+      MIN_DELAY_MS: 2000,
+      MAX_DELAY_MS: 10000,
+      LAPSE_THRESHOLD_MS: 500,
+      FALSE_START_THRESHOLD_MS: 100,
+      TIMEOUT_MS: 10000,
+      FIRST_DELAY_MS: 2000,
+      VARIANT: "5min"
+    },
   };
 
   const DOC_POINTER_OPTS = { passive: false, capture: true };
@@ -214,7 +225,6 @@
   let nextDotTimeout = null;
   let endTime = 0;
 
-  let participantId = "";
   let trial = 0;
   let falseStarts = 0;
   let lapses = 0;
@@ -251,9 +261,6 @@
 
   function start(){
     if (running || completed) return;
-
-    const id = (pidInput.value || '').trim();
-    if (!id) { alert('Please enter a Participant ID to begin.'); pidInput.focus(); return; }
 
     // Lock preset at start, so changing dropdown mid task does nothing
     const chosen = variantSelect.value;
@@ -455,9 +462,7 @@
 
     results = [];
     trial = 0; falseStarts = 0; lapses = 0;
-    participantId = '';
     sessionStartLocal = '';
-    pidInput.value = '';
 
     // Show UI
     gate.style.display = 'flex';
@@ -469,7 +474,7 @@
 
   // Start bindings
   startBtn.addEventListener('click', start);
-  startBtn.addEventListener('pointerup', start);renderResults()
+  startBtn.addEventListener('pointerup', start);
   
   startBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') start(); });
 
