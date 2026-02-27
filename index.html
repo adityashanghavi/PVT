@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PVT Task — 3 min / 5 min</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: #0f172a; color: #e2e8f0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      display: flex; justify-content: center; align-items: center; flex-direction: column;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; touch-action: manipulation;
+      text-align: center;
+      padding: 18px;
+      box-sizing: border-box;
+    }
+    .dot {
+      position: fixed;
+      left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 50px; height: 50px; border-radius: 50%; background: #ef4444;
+      box-shadow: 0 0 0 6px rgba(239,68,68,.2), 0 0 50px rgba(239,68,68,.35);
+      display: none;
+      z-index: 9999;
+    }
+    button { margin: 10px; padding: 10px 18px; font-size: 16px; border-radius: 12px; border: 1px solid #334155; background: #0b1220; color: #e2e8f0; cursor: pointer; }
+    button:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    #instructions { max-width: 680px; margin-bottom: 16px; color: #cbd5e1; }
+    #gate { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    #pidWrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    label { color: #cbd5e1; }
+    input[type="text"], select {
+      padding: 8px 10px; border-radius: 10px; border: 1px solid #334155;
+      background: #0b1220; color: #e2e8f0;
+      font-size: 15px;
+    }
+
+    #thanks { display: none; margin-top: 14px; font-size: 18px; color: #e2e8f0; }
+
+    #resultsPanel {
+      display: none;
+      width: min(980px, 100%);
+      margin-top: 18px;
+      text-align: left;
+      border: 1px solid #334155;
+      background: #0b1220;
+      border-radius: 16px;
+      padding: 14px;
+      box-sizing: border-box;
+    }
+
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline; margin: 10px 0; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #334155;
+      background: rgba(15, 23, 42, 0.6);
+      color: #e2e8f0;
+      font-size: 14px;
+    }
+    .muted { color: #cbd5e1; }
+    .divider { height: 1px; background: #1f2a44; margin: 12px 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+      padding: 10px;
+      text-align: left;
+      color: #e2e8f0;
+      z-index: 1;
+    }
+    tbody td {
+      border-bottom: 1px solid rgba(51,65,85,.45);
+      padding: 8px 10px;
+      color: #e2e8f0;
+    }
+    tbody tr:hover { background: rgba(148, 163, 184, 0.08); }
+
+    #tableWrap {
+      max-height: 340px;
+      overflow: auto;
+      border: 1px solid rgba(51,65,85,.55);
+      border-radius: 12px;
+    }
+
+    .smallNote { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+    .title { margin: 0 0 6px 0; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <div id="instructions">
+    <h2 style="margin:0 0 8px 0;">Instructions</h2>
+    <p>A red dot will appear in the center at random intervals.</p>
+    <p>Tap or click it as quickly as possible each time it appears.</p>
+    <p>Choose the task length, enter Participant ID, then press Start.</p>
+  </div>
+
+  <div id="gate">
+    <div id="pidWrap">
+      <label for="taskVariant">Task:</label>
+      <select id="taskVariant">
+        <option value="3min">PVT 3 minutes</option>
+        <option value="5min" selected>PVT 5 minutes</option>
+      </select>
+
+      <label for="participantId">Participant ID:</label>
+      <input id="participantId" type="text" placeholder="e.g., P001" autocomplete="off" />
+
+      <button id="startBtn">Start PVT</button>
+    </div>
+    <div class="smallNote">
+      Tip: On phones, use your thumb and tap the dot. Avoid resting your finger on the screen.
+    </div>
+  </div>
+
+  <div id="dot" class="dot" aria-hidden="true"></div>
+
+  <div id="thanks">Task complete. Results are shown below.</div>
+
+  <div id="resultsPanel">
+    <h3 class="title">Results</h3>
+    <div class="row" id="summaryPills"></div>
+    <div class="divider"></div>
+
+    <div class="row">
+      <button id="downloadBtn">Download JSON</button>
+      <button id="restartBtn">Restart (new participant or new run)</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="muted" style="margin-bottom:8px;">Trial by trial</div>
+    <div id="tableWrap">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Trial</th>
+            <th>Event</th>
+            <th>RT (ms)</th>
+            <th>Lapse</th>
+            <th>False Start</th>
+            <th>Timestamp (ISO)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="smallNote">
+      Lapse definition depends on variant: 3 min uses 355 ms, 5 min uses 500 ms. Timeouts are counted as lapses.
+    </div>
+  </div>
+
+<script>
+(function(){
+  const dot = document.getElementById('dot');
+  const startBtn = document.getElementById('startBtn');
+  const instructions = document.getElementById('instructions');
+  const pidInput = document.getElementById('participantId');
+  const gate = document.getElementById('gate');
+  const thanks = document.getElementById('thanks');
+
+  const variantSelect = document.getElementById('taskVariant');
+  const resultsPanel = document.getElementById('resultsPanel');
+  const summaryPills = document.getElementById('summaryPills');
+  const resultsTbody = document.querySelector('#resultsTable tbody');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  // Two presets, selectable via dropdown
+  const PRESETS = {
+    "5min": {
+      label: "PVT 5 minutes",
+      TASK_DURATION_MS: 5 * 60 * 1000,
+      MIN_DELAY_MS: 2000,
+      MAX_DELAY_MS: 10000,
+      LAPSE_THRESHOLD_MS: 500,
+      FALSE_START_THRESHOLD_MS: 100,
+      TIMEOUT_MS: 10000,
+      FIRST_DELAY_MS: 2000,
+      VARIANT: "5min"
+    },
+    "3min": {
+      label: "PVT 3 minutes",
+      TASK_DURATION_MS: 3 * 60 * 1000,
+      MIN_DELAY_MS: 1000,
+      MAX_DELAY_MS: 4000,
+      LAPSE_THRESHOLD_MS: 355,
+      FALSE_START_THRESHOLD_MS: 100,
+      TIMEOUT_MS: 10000,
+      FIRST_DELAY_MS: null,
+      VARIANT: "3min"
+    }
+  };
+
+  const DOC_POINTER_OPTS = { passive: false, capture: true };
+
+  let running = false;
+  let completed = false;
+
+  let appearAt = 0;
+  let nextDotTimeout = null;
+  let endTime = 0;
+
+  let participantId = "";
+  let trial = 0;
+  let falseStarts = 0;
+  let lapses = 0;
+  let firstStimulus = true;
+
+  let results = [];
+  let dotTimeoutId = null;
+  let sessionStartLocal = "";
+
+  // Active config (filled at start)
+  let CFG = PRESETS["5min"];
+
+  function placeDot(){
+    dot.style.display = 'block';
+    appearAt = performance.now();
+    clearTimeout(dotTimeoutId);
+    dotTimeoutId = setTimeout(onStimulusTimeout, CFG.TIMEOUT_MS);
+  }
+
+  function hideDot(){
+    dot.style.display = 'none';
+    appearAt = 0;
+    clearTimeout(dotTimeoutId);
+    dotTimeoutId = null;
+  }
+
+  function scheduleNextDot(){
+    const delay = (firstStimulus && CFG.FIRST_DELAY_MS != null)
+      ? CFG.FIRST_DELAY_MS
+      : (Math.random() * (CFG.MAX_DELAY_MS - CFG.MIN_DELAY_MS) + CFG.MIN_DELAY_MS);
+    firstStimulus = false;
+    nextDotTimeout = setTimeout(() => { if (running) placeDot(); }, delay);
+  }
+
+  function start(){
+    if (running || completed) return;
+
+    const id = (pidInput.value || '').trim();
+    if (!id) { alert('Please enter a Participant ID to begin.'); pidInput.focus(); return; }
+
+    // Lock preset at start, so changing dropdown mid task does nothing
+    const chosen = variantSelect.value;
+    CFG = PRESETS[chosen] || PRESETS["5min"];
+
+    participantId = id;
+    sessionStartLocal = new Date().toLocaleString();
+
+    running = true;
+    results = [];
+    trial = 0; falseStarts = 0; lapses = 0; firstStimulus = true;
+
+    // Attach background false-start listener only during the task
+    document.addEventListener('pointerdown', onBackgroundTap, DOC_POINTER_OPTS);
+
+    // Hide UI
+    gate.style.display = 'none';
+    instructions.style.display = 'none';
+    thanks.style.display = 'none';
+    resultsPanel.style.display = 'none';
+    startBtn.disabled = true;
+
+    const startAt = performance.now();
+    endTime = startAt + CFG.TASK_DURATION_MS;
+
+    scheduleNextDot();
+
+    const timerId = setInterval(() => {
+      if (performance.now() >= endTime) { clearInterval(timerId); finish(); }
+    }, 250);
+  }
+
+  function finish(){
+    running = false;
+    completed = true;
+    clearTimeout(nextDotTimeout);
+    hideDot();
+
+    document.removeEventListener('pointerdown', onBackgroundTap, DOC_POINTER_OPTS);
+
+    thanks.style.display = 'block';
+
+    // Render results immediately on page
+    renderResults();
+
+    resultsPanel.style.display = 'block';
+  }
+
+  function recordResponse(){
+    if (!running || !appearAt) return;
+
+    const rt = Math.round(performance.now() - appearAt);
+    const ts = new Date().toISOString();
+
+    if (rt < CFG.FALSE_START_THRESHOLD_MS) {
+      falseStarts++; trial++;
+      results.push({ event: 'false_start', trial, rt, lapse: 0, false_start: 1, ts });
+    } else {
+      const lapseFlag = rt >= CFG.LAPSE_THRESHOLD_MS ? 1 : 0;
+      if (lapseFlag) lapses++;
+      trial++;
+      results.push({ event: 'response', trial, rt, lapse: lapseFlag, false_start: 0, ts });
+    }
+
+    hideDot();
+    if (performance.now() < endTime) scheduleNextDot();
+  }
+
+  function onBackgroundTap(e){
+    if (!running) return;
+    if (!appearAt){
+      e.preventDefault();
+      const ts = new Date().toISOString();
+      falseStarts++;
+      results.push({ event: 'false_start', trial: '', rt: '', lapse: '', false_start: 1, ts });
+    }
+  }
+
+  function onStimulusTimeout(){
+    if (!running || !appearAt) return;
+    const ts = new Date().toISOString();
+    trial++; lapses++;
+    const rt = CFG.TIMEOUT_MS;
+    results.push({ event: 'timeout', trial, rt, lapse: 1, false_start: 0, ts });
+    hideDot();
+    if (performance.now() < endTime) scheduleNextDot();
+  }
+
+  function computeExtraSummary(){
+    // Only use "response" trials for RT metrics (exclude timeouts/false starts by event)
+    const rts = results
+      .filter(r => r.event === 'response' && typeof r.rt === 'number')
+      .map(r => r.rt);
+
+    const sort = [...rts].sort((a,b)=>a-b);
+
+    const mean = (arr) => arr.length ? Math.round(arr.reduce((s,x)=>s+x,0) / arr.length) : '';
+    const median = (arr) => {
+      if (!arr.length) return '';
+      const mid = Math.floor(arr.length/2);
+      return (arr.length % 2) ? sort[mid] : Math.round((sort[mid-1] + sort[mid]) / 2);
+    };
+    const min = (arr) => arr.length ? Math.min(...arr) : '';
+    const max = (arr) => arr.length ? Math.max(...arr) : '';
+
+    return {
+      rt_n: rts.length,
+      rt_mean_ms: mean(rts),
+      rt_median_ms: median(rts),
+      rt_min_ms: min(rts),
+      rt_max_ms: max(rts)
+    };
+  }
+
+  function pill(text){
+    const span = document.createElement('span');
+    span.className = 'pill';
+    span.textContent = text;
+    return span;
+  }
+
+  function renderResults(){
+    // Summary pills
+    summaryPills.innerHTML = '';
+    const extra = computeExtraSummary();
+
+    summaryPills.appendChild(pill(`Task: ${CFG.label}`));
+    summaryPills.appendChild(pill(`Participant: ${participantId}`));
+    summaryPills.appendChild(pill(`Started: ${sessionStartLocal}`));
+    summaryPills.appendChild(pill(`Trials (counted): ${trial}`));
+    summaryPills.appendChild(pill(`False starts: ${falseStarts}`));
+    summaryPills.appendChild(pill(`Lapses: ${lapses}`));
+    summaryPills.appendChild(pill(`RT n: ${extra.rt_n}`));
+    summaryPills.appendChild(pill(`RT mean: ${extra.rt_mean_ms === '' ? 'NA' : extra.rt_mean_ms + ' ms'}`));
+    summaryPills.appendChild(pill(`RT median: ${extra.rt_median_ms === '' ? 'NA' : extra.rt_median_ms + ' ms'}`));
+
+    // Table
+    resultsTbody.innerHTML = '';
+    for (const row of results) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.trial ?? ''}</td>
+        <td>${row.event ?? ''}</td>
+        <td>${row.rt ?? ''}</td>
+        <td>${row.lapse ?? ''}</td>
+        <td>${row.false_start ?? ''}</td>
+        <td>${row.ts ?? ''}</td>
+      `;
+      resultsTbody.appendChild(tr);
+    }
+  }
+
+  function buildJSON(){
+    const extra = computeExtraSummary();
+    return JSON.stringify({
+      variant: CFG.VARIANT,
+      variant_label: CFG.label,
+      participant_id: participantId,
+      start_time_local: sessionStartLocal,
+      local_time: new Date().toLocaleString(),
+      thresholds: {
+        lapse_ms: CFG.LAPSE_THRESHOLD_MS,
+        false_start_ms: CFG.FALSE_START_THRESHOLD_MS,
+        timeout_ms: CFG.TIMEOUT_MS,
+        isi_min_ms: CFG.MIN_DELAY_MS,
+        isi_max_ms: CFG.MAX_DELAY_MS,
+        first_delay_ms: CFG.FIRST_DELAY_MS
+      },
+      summary: {
+        trials_counted: trial,
+        false_starts: falseStarts,
+        lapses: lapses,
+        rt_n: extra.rt_n,
+        rt_mean_ms: extra.rt_mean_ms,
+        rt_median_ms: extra.rt_median_ms,
+        rt_min_ms: extra.rt_min_ms,
+        rt_max_ms: extra.rt_max_ms
+      },
+      rows: results
+    }, null, 2);
+  }
+
+  function saveJSONLocally(){
+    const json = buildJSON();
+    const blob = new Blob([json], {type: 'application/json;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeId = participantId.replace(/[^a-zA-Z0-9_-]/g,'_') || 'PID';
+    const localStamp = new Date().toLocaleString().replace(/[\\/:]/g,'-').replace(/\s+/g,'_');
+    a.href = url;
+    a.download = `pvt_${CFG.VARIANT}_${safeId}_${localStamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function resetAll(){
+    running = false;
+    completed = false;
+    clearTimeout(nextDotTimeout);
+    hideDot();
+    document.removeEventListener('pointerdown', onBackgroundTap, DOC_POINTER_OPTS);
+
+    results = [];
+    trial = 0; falseStarts = 0; lapses = 0;
+    participantId = '';
+    sessionStartLocal = '';
+    pidInput.value = '';
+
+    // Show UI
+    gate.style.display = 'flex';
+    instructions.style.display = 'block';
+    thanks.style.display = 'none';
+    resultsPanel.style.display = 'none';
+    startBtn.disabled = false;
+  }
+
+  // Start bindings
+  startBtn.addEventListener('click', start);
+  startBtn.addEventListener('pointerup', start);
+  startBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') start(); });
+
+  // Response binding
+  dot.addEventListener('pointerdown', recordResponse);
+
+  // Results actions
+  downloadBtn.addEventListener('click', saveJSONLocally);
+  restartBtn.addEventListener('click', resetAll);
+})();
+</script>
+</body>
+</html>
