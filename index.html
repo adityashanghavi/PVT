@@ -142,20 +142,6 @@
     </div>
     
     <div class="divider"></div>
-    
-    <div class="muted" style="margin-bottom:8px;">Full JSON Output</div>
-    <pre id="jsonOutput" style="
-      background:#0f172a;
-      border:1px solid #334155;
-      border-radius:12px;
-      padding:12px;
-      max-height:300px;
-      overflow:auto;
-      font-size:12px;
-      color:#cbd5e1;
-    "></pre>
-
-    <div class="divider"></div>
 
     <div class="muted" style="margin-bottom:8px;">Trial by trial</div>
     <div id="tableWrap">
@@ -393,16 +379,11 @@
     // Summary pills
     summaryPills.innerHTML = '';
     const extra = computeExtraSummary();
-
-    summaryPills.appendChild(pill(`Task: ${CFG.label}`));
-    summaryPills.appendChild(pill(`Participant: ${participantId}`));
-    summaryPills.appendChild(pill(`Started: ${sessionStartLocal}`));
-    summaryPills.appendChild(pill(`Trials (counted): ${trial}`));
-    summaryPills.appendChild(pill(`False starts: ${falseStarts}`));
-    summaryPills.appendChild(pill(`Lapses: ${lapses}`));
-    summaryPills.appendChild(pill(`RT n: ${extra.rt_n}`));
+    
     summaryPills.appendChild(pill(`RT mean: ${extra.rt_mean_ms === '' ? 'NA' : extra.rt_mean_ms + ' ms'}`));
     summaryPills.appendChild(pill(`RT median: ${extra.rt_median_ms === '' ? 'NA' : extra.rt_median_ms + ' ms'}`));
+    summaryPills.appendChild(pill(`Lapses: ${lapses}`));
+    summaryPills.appendChild(pill(`False starts: ${falseStarts}`));
 
     // Table
     resultsTbody.innerHTML = '';
@@ -418,9 +399,6 @@
       `;
       resultsTbody.appendChild(tr);
     }
-
-    const jsonOutput = document.getElementById('jsonOutput');
-    jsonOutput.textContent = buildJSON();
 }
 
   function buildJSON(){
